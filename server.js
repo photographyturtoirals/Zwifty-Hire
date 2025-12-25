@@ -1,20 +1,20 @@
 /*************************************************
- * ZWIFTY INTERNSHIP EXAM – SERVER (FINAL)
+ * ZWIFTY INTERNSHIP EXAM – SERVER (MONGODB FINAL)
  *************************************************/
-console.log("🔥 LOGIN HIT - NEW CODE RUNNING");
+console.log("🔥 ZWIFTY SERVER RUNNING WITH MONGODB");
 
 /* ================== EXAM TIME CONFIG ================== */
-const EXAM_START_TIME = new Date("2025-12-25T13:00:00Z"); // 7:30 PM IST
-const EXAM_END_TIME   = new Date("2025-12-25T15:30:00Z"); // 9:00 PM IST
-
+// 25 Dec 2025 | 7:30 PM – 9:00 PM IST
+const EXAM_START_TIME = new Date("2025-12-25T19:30:00+05:30");
+const EXAM_END_TIME   = new Date("2025-12-25T21:00:00+05:30");
 
 /* ================== IMPORTS ================== */
+require("dotenv").config();
 const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const multer = require("multer");
-const fs = require("fs");
-const admin = require("./firebase");
+const mongoose = require("mongoose");
 const session = require("express-session");
 const path = require("path");
 const { Parser } = require("json2csv");
@@ -31,15 +31,46 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.use(
   session({
-    secret: "zwifty-admin-secret",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: { maxAge: 1000 * 60 * 60 }
   })
 );
 
-/* ================== FIRESTORE ================== */
-const db = admin.firestore();
+/* ================== MONGODB CONNECT ================== */
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => {
+    console.error("❌ MongoDB Connection Failed:", err);
+    process.exit(1);
+  });
+
+/* ================== SCHEMAS ================== */
+const UserSchema = new mongoose.Schema({
+  name: String,
+  email: { type: String, unique: true },
+  phone: String,
+  college: String,
+  attempted: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const ResultSchema = new mongoose.Schema({
+  email: String,
+  answers: Array,
+  submittedAt: { type: Date, default: Date.now }
+});
+
+const LogSchema = new mongoose.Schema({
+  email: String,
+  name: String,
+  logs: Array
+});
+
+const User = mongoose.model("User", UserSchema);
+const Result = mongoose.model("Result", ResultSchema);
+const ExamLog = mongoose.model("ExamLog", LogSchema);
 
 /* ================== FILE UPLOADS ================== */
 const upload = multer({
@@ -47,57 +78,34 @@ const upload = multer({
   limits: { fileSize: 200 * 1024 * 1024 }
 });
 
-const snapshotUpload = multer({
-  storage: multer.memoryStorage()
-});
-
 /* ================== EXAM TIME GUARD ================== */
 function examTimeCheck(req, res, next) {
   const now = new Date();
 
-  if (now < EXAM_START_TIME) {
+  if (now < EXAM_START_TIME)
     return res.status(403).json({ error: "⏳ Exam has not started yet" });
-  }
 
-  if (now > EXAM_END_TIME) {
+  if (now > EXAM_END_TIME)
     return res.status(403).json({ error: "⛔ Exam has ended" });
-  }
 
   next();
 }
 
-/* ================== CANDIDATE LOGIN ================== */
+/* ================== LOGIN ================== */
 app.post("/login", examTimeCheck, async (req, res) => {
   try {
     let { name, email, phone, college } = req.body;
     if (!email) return res.status(400).json({ error: "Email required" });
 
-    // ✅ FIX 1: Normalize email
     email = email.trim().toLowerCase();
 
-    const ref = db.collection("users").doc(email);
-    const snap = await ref.get();
+    let user = await User.findOne({ email });
 
-    // ✅ FIX 2: Block ONLY if attempted === true
-    if (snap.exists) {
-      const data = snap.data();
-      if (data && data.attempted === true) {
-        return res.status(403).json({
-          error: "You have already attempted this exam"
-        });
-      }
-    }
+    if (user && user.attempted)
+      return res.status(403).json({ error: "You have already attempted this exam" });
 
-    // ✅ FIX 3: Create user only if not exists
-    if (!snap.exists) {
-      await ref.set({
-        name,
-        email,
-        phone,
-        college,
-        attempted: false,
-        createdAt: new Date()
-      });
+    if (!user) {
+      await User.create({ name, email, phone, college });
     }
 
     res.json({ success: true });
@@ -113,18 +121,10 @@ app.post("/log", async (req, res) => {
     const { candidate, email, type } = req.body;
     if (!email || !type) return res.sendStatus(400);
 
-    const safeEmail = email.trim().toLowerCase();
-
-    await db.collection("exam_attempts").doc(safeEmail).set(
-      {
-        name: candidate,
-        email: safeEmail,
-        logs: admin.firestore.FieldValue.arrayUnion({
-          type,
-          time: new Date().toISOString()
-        })
-      },
-      { merge: true }
+    await ExamLog.updateOne(
+      { email },
+      { $push: { logs: { type, time: new Date() } }, $setOnInsert: { name: candidate } },
+      { upsert: true }
     );
 
     res.sendStatus(200);
@@ -138,72 +138,23 @@ app.post("/log", async (req, res) => {
 app.post("/submit", examTimeCheck, async (req, res) => {
   try {
     let { email, answers } = req.body;
-    if (!email) return res.status(400).json({ error: "Email required" });
-
-    // ✅ FIX 4: Normalize email
     email = email.trim().toLowerCase();
 
-    const userRef = db.collection("users").doc(email);
-    const userSnap = await userRef.get();
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ error: "User not found" });
 
-    if (!userSnap.exists) {
-      return res.status(400).json({ error: "User not found" });
-    }
-
-    if (userSnap.data().attempted === true) {
+    if (user.attempted)
       return res.status(403).json({ error: "Already submitted" });
-    }
 
-    await db.collection("results").doc(email).set({
-      email,
-      answers: answers || [],
-      submittedAt: new Date()
-    });
-
-    await userRef.update({
-      attempted: true
-    });
+    await Result.create({ email, answers });
+    user.attempted = true;
+    await user.save();
 
     res.json({ success: true });
   } catch (err) {
     console.error("Submit error:", err);
     res.status(500).json({ error: "Submission failed" });
   }
-});
-
-/* ================== SNAPSHOT UPLOAD ================== */
-app.post("/upload-snapshot", snapshotUpload.single("image"), async (req, res) => {
-  try {
-    let { email, reason } = req.body;
-    if (!req.file || !email) return res.sendStatus(400);
-
-    email = email.trim().toLowerCase();
-
-    const bucket = admin.storage().bucket();
-    const fileName = `snapshots/${email}_${Date.now()}.png`;
-
-    await bucket.file(fileName).save(req.file.buffer, {
-      metadata: { contentType: "image/png" }
-    });
-
-    await db.collection("snapshots").add({
-      email,
-      reason,
-      path: fileName,
-      time: new Date()
-    });
-
-    res.sendStatus(200);
-  } catch (err) {
-    console.error("Snapshot error:", err);
-    res.sendStatus(500);
-  }
-});
-
-/* ================== SCREEN RECORDING ================== */
-app.post("/upload-screen", upload.single("video"), (req, res) => {
-  if (!req.file) return res.sendStatus(400);
-  res.sendStatus(200);
 });
 
 /* ================== ADMIN AUTH ================== */
@@ -226,27 +177,19 @@ function requireAdmin(req, res, next) {
 
 /* ================== ADMIN RESULTS ================== */
 app.get("/admin/results", requireAdmin, async (req, res) => {
-  const snap = await db.collection("results").orderBy("submittedAt", "desc").get();
-  res.json(snap.docs.map(d => d.data()));
+  const results = await Result.find().sort({ submittedAt: -1 });
+  res.json(results);
 });
 
 /* ================== CSV EXPORT ================== */
 app.get("/admin/export-results", requireAdmin, async (req, res) => {
-  try {
-    const snap = await db.collection("results").get();
-    const data = snap.docs.map(doc => doc.data());
+  const data = await Result.find();
+  const parser = new Parser({ fields: ["email", "submittedAt", "answers"] });
+  const csv = parser.parse(data);
 
-    const parser = new Parser({
-      fields: ["email", "submittedAt", "answers"]
-    });
-
-    const csv = parser.parse(data);
-    res.header("Content-Type", "text/csv");
-    res.attachment("zwifty_exam_results.csv");
-    res.send(csv);
-  } catch {
-    res.status(500).send("CSV export failed");
-  }
+  res.header("Content-Type", "text/csv");
+  res.attachment("zwifty_exam_results.csv");
+  res.send(csv);
 });
 
 /* ================== SOCKET.IO ================== */
@@ -255,25 +198,20 @@ io.on("connection", socket => {
     socket.broadcast.emit("violation", data);
   });
 });
+
+/* ================== VERSION ================== */
 app.get("/__version", (req, res) => {
   res.json({
-    version: "ZWIFTY-SERVER-NEW-DEPLOY-25DEC",
+    version: "ZWIFTY-MONGODB-FINAL-25DEC",
     time: new Date().toISOString()
   });
 });
 
 /* ================== START SERVER ================== */
 const PORT = process.env.PORT || 3000;
-
 server.listen(PORT, () => {
   console.log("✅ Zwifty Exam Server Started");
   console.log("⏱️ Exam Window:");
   console.log("   Start:", EXAM_START_TIME.toString());
   console.log("   End  :", EXAM_END_TIME.toString());
 });
-
-
-
-
-
-
