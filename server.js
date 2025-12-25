@@ -1,6 +1,7 @@
 /*************************************************
  * ZWIFTY INTERNSHIP EXAM – SERVER (FINAL)
  *************************************************/
+console.log("🔥 LOGIN HIT - NEW CODE RUNNING");
 
 /* ================== EXAM TIME CONFIG ================== */
 const EXAM_START_TIME = new Date("2025-12-25T05:20:00+05:30");
@@ -263,3 +264,4 @@ server.listen(PORT, () => {
   console.log("   Start:", EXAM_START_TIME.toString());
   console.log("   End  :", EXAM_END_TIME.toString());
 });
+
