@@ -94,7 +94,8 @@ function examTimeCheck(req, res, next) {
 }
 
 /* ================== LOGIN ================== */
-app.post("/login", examTimeCheck, async (req, res) => {
+app.post("/login", async (req, res) => {
+
   try {
     let { name, email, phone, college } = req.body;
     if (!email) return res.status(400).json({ error: "Email required" });
@@ -217,5 +218,6 @@ server.listen(PORT, () => {
   console.log("   Start:", EXAM_START_TIME.toString());
   console.log("   End  :", EXAM_END_TIME.toString());
 });
+
 
 
