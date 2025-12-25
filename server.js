@@ -18,6 +18,8 @@ const mongoose = require("mongoose");
 const session = require("express-session");
 const path = require("path");
 const { Parser } = require("json2csv");
+console.log("📥 SUBMIT RECEIVED:", email, answers?.length);
+
 
 
 
@@ -218,6 +220,7 @@ server.listen(PORT, () => {
   console.log("   Start:", EXAM_START_TIME.toString());
   console.log("   End  :", EXAM_END_TIME.toString());
 });
+
 
 
 
