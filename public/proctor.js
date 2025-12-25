@@ -258,16 +258,19 @@ function submitExam() {
 }
 
 //collect answers
-function collectAnswers() {
-  const answers = [];
-  document.querySelectorAll("input[type=radio]:checked").forEach(r => {
-    answers.push({
-      question: r.name,
-      answer: r.value
-    });
-  });
-  return answers;
-}
+const savedAnswers = JSON.parse(
+  localStorage.getItem("finalAnswers") || "[]"
+);
+
+fetch("/submit", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: candidateEmail,
+    answers: savedAnswers
+  })
+})
+
 
 
 /* ================= START ================= */
@@ -281,4 +284,5 @@ async function beginExam() {
   await startVoiceDetection();
   startExamTimer(50);
 }
+
 
