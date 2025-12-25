@@ -243,12 +243,21 @@ function submitExam() {
   if (examEnded) return;
   examEnded = true;
 
+  const finalAnswers = JSON.parse(
+    localStorage.getItem("finalAnswers") || "[]"
+  );
+
+  if (!finalAnswers.length) {
+    alert("❌ Answers not captured. Submission blocked.");
+    return;
+  }
+
   fetch("/submit", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       email: candidateEmail,
-      answers: collectAnswers()
+      answers: finalAnswers
     })
   }).finally(() => {
     alert("✅ Exam submitted");
@@ -256,6 +265,7 @@ function submitExam() {
     location.href = "login.html";
   });
 }
+
 
 //collect answers
 // ❌ REMOVE THIS COMPLETELY
@@ -286,6 +296,7 @@ async function beginExam() {
   await startVoiceDetection();
   startExamTimer(50);
 }
+
 
 
 
