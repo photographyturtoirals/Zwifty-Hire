@@ -67,16 +67,26 @@ function examTimeCheck(req, res, next) {
 /* ================== CANDIDATE LOGIN ================== */
 app.post("/login", examTimeCheck, async (req, res) => {
   try {
-    const { name, email, phone, college } = req.body;
+    let { name, email, phone, college } = req.body;
     if (!email) return res.status(400).json({ error: "Email required" });
+
+    // ✅ FIX 1: Normalize email
+    email = email.trim().toLowerCase();
 
     const ref = db.collection("users").doc(email);
     const snap = await ref.get();
 
-    if (snap.exists && snap.data().attempted === true) {
-      return res.status(403).json({ error: "You have already attempted this exam" });
+    // ✅ FIX 2: Block ONLY if attempted === true
+    if (snap.exists) {
+      const data = snap.data();
+      if (data && data.attempted === true) {
+        return res.status(403).json({
+          error: "You have already attempted this exam"
+        });
+      }
     }
 
+    // ✅ FIX 3: Create user only if not exists
     if (!snap.exists) {
       await ref.set({
         name,
@@ -101,10 +111,12 @@ app.post("/log", async (req, res) => {
     const { candidate, email, type } = req.body;
     if (!email || !type) return res.sendStatus(400);
 
-    await db.collection("exam_attempts").doc(email).set(
+    const safeEmail = email.trim().toLowerCase();
+
+    await db.collection("exam_attempts").doc(safeEmail).set(
       {
         name: candidate,
-        email,
+        email: safeEmail,
         logs: admin.firestore.FieldValue.arrayUnion({
           type,
           time: new Date().toISOString()
@@ -123,8 +135,22 @@ app.post("/log", async (req, res) => {
 /* ================== SUBMIT EXAM ================== */
 app.post("/submit", examTimeCheck, async (req, res) => {
   try {
-    const { email, answers } = req.body;
+    let { email, answers } = req.body;
     if (!email) return res.status(400).json({ error: "Email required" });
+
+    // ✅ FIX 4: Normalize email
+    email = email.trim().toLowerCase();
+
+    const userRef = db.collection("users").doc(email);
+    const userSnap = await userRef.get();
+
+    if (!userSnap.exists) {
+      return res.status(400).json({ error: "User not found" });
+    }
+
+    if (userSnap.data().attempted === true) {
+      return res.status(403).json({ error: "Already submitted" });
+    }
 
     await db.collection("results").doc(email).set({
       email,
@@ -132,7 +158,7 @@ app.post("/submit", examTimeCheck, async (req, res) => {
       submittedAt: new Date()
     });
 
-    await db.collection("users").doc(email).update({
+    await userRef.update({
       attempted: true
     });
 
@@ -146,8 +172,10 @@ app.post("/submit", examTimeCheck, async (req, res) => {
 /* ================== SNAPSHOT UPLOAD ================== */
 app.post("/upload-snapshot", snapshotUpload.single("image"), async (req, res) => {
   try {
-    const { email, reason } = req.body;
+    let { email, reason } = req.body;
     if (!req.file || !email) return res.sendStatus(400);
+
+    email = email.trim().toLowerCase();
 
     const bucket = admin.storage().bucket();
     const fileName = `snapshots/${email}_${Date.now()}.png`;
@@ -235,4 +263,3 @@ server.listen(PORT, () => {
   console.log("   Start:", EXAM_START_TIME.toString());
   console.log("   End  :", EXAM_END_TIME.toString());
 });
-
