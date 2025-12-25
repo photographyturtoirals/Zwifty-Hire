@@ -2,31 +2,27 @@
  * ZWIFTY INTERNSHIP EXAM – SERVER (FINAL)
  *************************************************/
 
-/* ================== EXAM TIME CONFIG ==================
-   ⚠️ CHANGE DATE & TIME HERE ONLY
-================================================== */
+/* ================== EXAM TIME CONFIG ================== */
+const EXAM_START_TIME = new Date("2025-01-25T05:20:00+05:30");
+const EXAM_END_TIME   = new Date("2025-01-25T07:00:00+05:30");
 
-const EXAM_START_TIME = new Date("2025-01-25T01:20:00+05:30");
-const EXAM_END_TIME   = new Date("2025-01-25T02:00:00+07:30");
-
+/* ================== IMPORTS ================== */
 const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const multer = require("multer");
 const fs = require("fs");
-const { exec } = require("child_process");
 const admin = require("./firebase");
 const session = require("express-session");
 const path = require("path");
 const { Parser } = require("json2csv");
 
+/* ================== APP SETUP ================== */
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-/* =========================
-   MIDDLEWARE
-========================= */
+/* ================== MIDDLEWARE ================== */
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
@@ -40,26 +36,10 @@ app.use(
   })
 );
 
-/* =========================
-   FIRESTORE
-========================= */
-const admin = require("firebase-admin");
+/* ================== FIRESTORE ================== */
+const db = admin.firestore();
 
-const serviceAccount = JSON.parse(
-  process.env.FIREBASE_SERVICE_ACCOUNT
-);
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  storageBucket: "zwifty-aea8b.appspot.com"
-});
-
-module.exports = admin;
-
-
-/* =========================
-   FILE UPLOADS
-========================= */
+/* ================== FILE UPLOADS ================== */
 const upload = multer({
   dest: "recordings/",
   limits: { fileSize: 200 * 1024 * 1024 }
@@ -69,30 +49,22 @@ const snapshotUpload = multer({
   storage: multer.memoryStorage()
 });
 
-/* =================================================
-   ⏱️ EXAM TIME GUARD (SERVER-SIDE)
-================================================= */
+/* ================== EXAM TIME GUARD ================== */
 function examTimeCheck(req, res, next) {
   const now = new Date();
 
   if (now < EXAM_START_TIME) {
-    return res.status(403).json({
-      error: "⏳ Exam has not started yet"
-    });
+    return res.status(403).json({ error: "⏳ Exam has not started yet" });
   }
 
   if (now > EXAM_END_TIME) {
-    return res.status(403).json({
-      error: "⛔ Exam has ended"
-    });
+    return res.status(403).json({ error: "⛔ Exam has ended" });
   }
 
   next();
 }
 
-/* =================================================
-   🧑‍🎓 CANDIDATE LOGIN (TIME + ONE ATTEMPT)
-================================================= */
+/* ================== CANDIDATE LOGIN ================== */
 app.post("/login", examTimeCheck, async (req, res) => {
   try {
     const { name, email, phone, college } = req.body;
@@ -102,9 +74,7 @@ app.post("/login", examTimeCheck, async (req, res) => {
     const snap = await ref.get();
 
     if (snap.exists && snap.data().attempted === true) {
-      return res.status(403).json({
-        error: "You have already attempted this exam"
-      });
+      return res.status(403).json({ error: "You have already attempted this exam" });
     }
 
     if (!snap.exists) {
@@ -125,9 +95,7 @@ app.post("/login", examTimeCheck, async (req, res) => {
   }
 });
 
-/* =================================================
-   🔴 PROCTORING LOGS
-================================================= */
+/* ================== PROCTORING LOGS ================== */
 app.post("/log", async (req, res) => {
   try {
     const { candidate, email, type } = req.body;
@@ -152,9 +120,7 @@ app.post("/log", async (req, res) => {
   }
 });
 
-/* =================================================
-   📝 SUBMIT EXAM (TIME-LOCKED)
-================================================= */
+/* ================== SUBMIT EXAM ================== */
 app.post("/submit", examTimeCheck, async (req, res) => {
   try {
     const { email, answers } = req.body;
@@ -177,9 +143,7 @@ app.post("/submit", examTimeCheck, async (req, res) => {
   }
 });
 
-/* =================================================
-   📸 SNAPSHOT UPLOAD
-================================================= */
+/* ================== SNAPSHOT UPLOAD ================== */
 app.post("/upload-snapshot", snapshotUpload.single("image"), async (req, res) => {
   try {
     const { email, reason } = req.body;
@@ -206,17 +170,13 @@ app.post("/upload-snapshot", snapshotUpload.single("image"), async (req, res) =>
   }
 });
 
-/* =================================================
-   🎥 SCREEN RECORDING (OPTIONAL)
-================================================= */
+/* ================== SCREEN RECORDING ================== */
 app.post("/upload-screen", upload.single("video"), (req, res) => {
   if (!req.file) return res.sendStatus(400);
   res.sendStatus(200);
 });
 
-/* =================================================
-   🔐 ADMIN AUTH
-================================================= */
+/* ================== ADMIN AUTH ================== */
 const ADMIN_EMAIL = "admin@zwifty.com";
 const ADMIN_PASSWORD = "Zwifty@123";
 
@@ -234,17 +194,13 @@ function requireAdmin(req, res, next) {
   res.status(403).json({ error: "Unauthorized" });
 }
 
-/* =================================================
-   📊 ADMIN RESULTS
-================================================= */
+/* ================== ADMIN RESULTS ================== */
 app.get("/admin/results", requireAdmin, async (req, res) => {
   const snap = await db.collection("results").orderBy("submittedAt", "desc").get();
   res.json(snap.docs.map(d => d.data()));
 });
 
-/* =================================================
-   📁 CSV EXPORT
-================================================= */
+/* ================== CSV EXPORT ================== */
 app.get("/admin/export-results", requireAdmin, async (req, res) => {
   try {
     const snap = await db.collection("results").get();
@@ -263,18 +219,14 @@ app.get("/admin/export-results", requireAdmin, async (req, res) => {
   }
 });
 
-/* =================================================
-   🔌 SOCKET.IO
-================================================= */
+/* ================== SOCKET.IO ================== */
 io.on("connection", socket => {
   socket.on("violation", data => {
     socket.broadcast.emit("violation", data);
   });
 });
 
-/* =================================================
-   🚀 START SERVER
-================================================= */
+/* ================== START SERVER ================== */
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
@@ -283,5 +235,3 @@ server.listen(PORT, () => {
   console.log("   Start:", EXAM_START_TIME.toString());
   console.log("   End  :", EXAM_END_TIME.toString());
 });
-
-
