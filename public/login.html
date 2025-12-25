@@ -66,19 +66,20 @@ async function login() {
   }
 
   try {
-    /* 🔐 SERVER-SIDE ONE ATTEMPT CHECK */
     const res = await fetch("/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, phone, college })
     });
 
+    const data = await res.json(); // ✅ READ SERVER RESPONSE
+
     if (!res.ok) {
-      alert("You have already attempted this exam. Re-attempt is not allowed.");
+      alert(data.error || "Login failed");
       return;
     }
 
-    /* ✅ STORE DETAILS FOR EXAM & PROCTORING */
+    /* ✅ STORE DETAILS */
     localStorage.setItem("loggedIn", "true");
     localStorage.setItem("systemCheckPassed", "false");
 
@@ -87,7 +88,6 @@ async function login() {
     localStorage.setItem("candidatePhone", phone);
     localStorage.setItem("candidateCollege", college);
 
-    /* NEXT STEP */
     window.location.href = "system-check.html";
 
   } catch (err) {
@@ -98,3 +98,4 @@ async function login() {
 
 </body>
 </html>
+
