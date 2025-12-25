@@ -258,33 +258,19 @@ function submitExam() {
 }
 
 //collect answers
-function submitExam() {
-  if (examEnded) return;
-  examEnded = true;
+// ❌ REMOVE THIS COMPLETELY
+const savedAnswers = JSON.parse(
+  localStorage.getItem("finalAnswers") || "[]"
+);
 
-  // ✅ ALWAYS read final answers saved by exam.html
-  const finalAnswers = JSON.parse(
-    localStorage.getItem("finalAnswers") || "[]"
-  );
-
-  if (!finalAnswers.length) {
-    alert("❌ No answers captured. Submission blocked.");
-    return;
-  }
-
-  fetch("/submit", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: candidateEmail,
-      answers: finalAnswers
-    })
-  }).finally(() => {
-    alert("✅ Exam submitted");
-    localStorage.clear();
-    location.href = "login.html";
-  });
-}
+fetch("/submit", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: candidateEmail,
+    answers: savedAnswers
+  })
+})
 
 
 
