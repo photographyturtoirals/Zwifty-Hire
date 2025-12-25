@@ -5,8 +5,8 @@ console.log("🔥 ZWIFTY SERVER RUNNING WITH MONGODB");
 
 /* ================== EXAM TIME CONFIG ================== */
 // 25 Dec 2025 | 7:30 PM – 9:00 PM IST
-const EXAM_START_TIME = new Date("2025-12-25T21:30:00+05:30");
-const EXAM_END_TIME   = new Date("2025-12-25T23:00:00+05:30");
+const EXAM_START_TIME = new Date("2025-12-25T23:30:00+05:30");
+const EXAM_END_TIME   = new Date("2025-12-26T23:00:00+05:30");
 
 /* ================== IMPORTS ================== */
 require("dotenv").config();
@@ -220,6 +220,7 @@ server.listen(PORT, () => {
   console.log("   Start:", EXAM_START_TIME.toString());
   console.log("   End  :", EXAM_END_TIME.toString());
 });
+
 
 
 
