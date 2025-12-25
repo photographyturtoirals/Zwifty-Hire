@@ -1,9 +1,14 @@
 const admin = require("firebase-admin");
-const serviceAccount = require("./serviceAccount.json");
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  projectId: serviceAccount.project_id
-});
+if (!admin.apps.length) {
+  const serviceAccount = JSON.parse(
+    process.env.FIREBASE_SERVICE_ACCOUNT
+  );
+
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    storageBucket: "zwifty-aea8b.appspot.com"
+  });
+}
 
 module.exports = admin;
