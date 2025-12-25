@@ -238,8 +238,11 @@ function collectAnswers() {
     }
   });
 
+  // 🔥 SAVE FOR PROCTOR.JS
+  localStorage.setItem("finalAnswers", JSON.stringify(finalAnswers));
   return finalAnswers;
 }
+
 
 
 
@@ -256,6 +259,7 @@ loadQuestion();updatePalette();
 
 </body>
 </html>
+
 
 
 
