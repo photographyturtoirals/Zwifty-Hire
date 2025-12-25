@@ -224,7 +224,14 @@ function updatePalette(){
   });
 }
 
-function collectAnswers(){return answers;}
+function collectAnswers(){
+  return questions.map((q, i) => ({
+    question: q.q,
+    selectedOption: answers[i],
+    selectedText: answers[i] !== undefined ? q.o[answers[i]] : null
+  }));
+}
+
 
 loadQuestion();updatePalette();
 </script>
@@ -239,6 +246,7 @@ loadQuestion();updatePalette();
 
 </body>
 </html>
+
 
 
 
