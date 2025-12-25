@@ -6,8 +6,8 @@
    ⚠️ CHANGE DATE & TIME HERE ONLY
 ================================================== */
 
-const EXAM_START_TIME = new Date("2025-01-25T 1:20:00"); // IST
-const EXAM_END_TIME   = new Date("2025-01-25T 2:00:00"); // IST
+const EXAM_START_TIME = new Date("2025-01-25T 5:20:00"); // IST
+const EXAM_END_TIME   = new Date("2025-01-25T 6:30:00"); // IST
 const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
@@ -269,3 +269,4 @@ server.listen(PORT, () => {
   console.log("   Start:", EXAM_START_TIME.toString());
   console.log("   End  :", EXAM_END_TIME.toString());
 });
+
