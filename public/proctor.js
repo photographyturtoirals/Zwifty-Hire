@@ -258,18 +258,34 @@ function submitExam() {
 }
 
 //collect answers
-const savedAnswers = JSON.parse(
-  localStorage.getItem("finalAnswers") || "[]"
-);
+function submitExam() {
+  if (examEnded) return;
+  examEnded = true;
 
-fetch("/submit", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    email: candidateEmail,
-    answers: savedAnswers
-  })
-})
+  // ✅ ALWAYS read final answers saved by exam.html
+  const finalAnswers = JSON.parse(
+    localStorage.getItem("finalAnswers") || "[]"
+  );
+
+  if (!finalAnswers.length) {
+    alert("❌ No answers captured. Submission blocked.");
+    return;
+  }
+
+  fetch("/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: candidateEmail,
+      answers: finalAnswers
+    })
+  }).finally(() => {
+    alert("✅ Exam submitted");
+    localStorage.clear();
+    location.href = "login.html";
+  });
+}
+
 
 
 
@@ -284,5 +300,6 @@ async function beginExam() {
   await startVoiceDetection();
   startExamTimer(50);
 }
+
 
 
