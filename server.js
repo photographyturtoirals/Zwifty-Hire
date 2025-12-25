@@ -254,6 +254,12 @@ io.on("connection", socket => {
     socket.broadcast.emit("violation", data);
   });
 });
+app.get("/__version", (req, res) => {
+  res.json({
+    version: "ZWIFTY-SERVER-NEW-DEPLOY-25DEC",
+    time: new Date().toISOString()
+  });
+});
 
 /* ================== START SERVER ================== */
 const PORT = process.env.PORT || 3000;
@@ -264,4 +270,5 @@ server.listen(PORT, () => {
   console.log("   Start:", EXAM_START_TIME.toString());
   console.log("   End  :", EXAM_END_TIME.toString());
 });
+
 
