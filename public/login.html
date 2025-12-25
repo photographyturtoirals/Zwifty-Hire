@@ -74,10 +74,11 @@ async function login() {
 
     const data = await res.json(); // ✅ READ SERVER RESPONSE
 
-    if (!res.ok) {
-      alert(data.error || "Login failed");
-      return;
-    }
+  if (!res.ok) {
+  alert("LOGIN ERROR: " + (data.error || res.status));
+  return;
+}
+
 
     /* ✅ STORE DETAILS */
     localStorage.setItem("loggedIn", "true");
@@ -98,4 +99,5 @@ async function login() {
 
 </body>
 </html>
+
 
