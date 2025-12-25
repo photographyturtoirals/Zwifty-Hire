@@ -224,13 +224,23 @@ function updatePalette(){
   });
 }
 
-function collectAnswers(){
-  return questions.map((q, i) => ({
-    question: q.q,
-    selectedOption: answers[i],
-    selectedText: answers[i] !== undefined ? q.o[answers[i]] : null
-  }));
+function collectAnswers() {
+  const finalAnswers = [];
+
+  questions.forEach((q, i) => {
+    if (answers[i] !== undefined) {
+      finalAnswers.push({
+        questionNumber: i + 1,
+        question: q.q,
+        selectedOptionIndex: answers[i],
+        selectedOptionText: q.o[answers[i]]
+      });
+    }
+  });
+
+  return finalAnswers;
 }
+
 
 
 loadQuestion();updatePalette();
@@ -246,6 +256,7 @@ loadQuestion();updatePalette();
 
 </body>
 </html>
+
 
 
 
