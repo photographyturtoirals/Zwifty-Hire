@@ -257,6 +257,19 @@ function submitExam() {
   });
 }
 
+//collect answers
+function collectAnswers() {
+  const answers = [];
+  document.querySelectorAll("input[type=radio]:checked").forEach(r => {
+    answers.push({
+      question: r.name,
+      answer: r.value
+    });
+  });
+  return answers;
+}
+
+
 /* ================= START ================= */
 async function beginExam() {
   await document.documentElement.requestFullscreen();
@@ -268,3 +281,4 @@ async function beginExam() {
   await startVoiceDetection();
   startExamTimer(50);
 }
+
