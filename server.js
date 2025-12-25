@@ -6,8 +6,9 @@
    ⚠️ CHANGE DATE & TIME HERE ONLY
 ================================================== */
 
-const EXAM_START_TIME = new Date("2025-01-25T 5:20:00"); // IST
-const EXAM_END_TIME   = new Date("2025-01-25T 6:30:00"); // IST
+const EXAM_START_TIME = new Date("2025-01-25T01:20:00+05:30");
+const EXAM_END_TIME   = new Date("2025-01-25T02:00:00+07:30");
+
 const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
@@ -42,7 +43,19 @@ app.use(
 /* =========================
    FIRESTORE
 ========================= */
-const db = admin.firestore();
+const admin = require("firebase-admin");
+
+const serviceAccount = JSON.parse(
+  process.env.FIREBASE_SERVICE_ACCOUNT
+);
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  storageBucket: "zwifty-aea8b.appspot.com"
+});
+
+module.exports = admin;
+
 
 /* =========================
    FILE UPLOADS
@@ -262,11 +275,13 @@ io.on("connection", socket => {
 /* =================================================
    🚀 START SERVER
 ================================================= */
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+
 server.listen(PORT, () => {
   console.log("✅ Zwifty Exam Server Started");
   console.log("⏱️ Exam Window:");
   console.log("   Start:", EXAM_START_TIME.toString());
   console.log("   End  :", EXAM_END_TIME.toString());
 });
+
 
