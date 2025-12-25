@@ -4,8 +4,8 @@
 console.log("🔥 LOGIN HIT - NEW CODE RUNNING");
 
 /* ================== EXAM TIME CONFIG ================== */
-const EXAM_START_TIME = new Date("2025-12-25T18:30:00+05:30");
-const EXAM_END_TIME   = new Date("2025-12-25T19:30:00+05:30");
+const EXAM_START_TIME = new Date(2025, 11, 25, 19, 30, 0); // 25 Dec 2025, 7:30 PM IST
+const EXAM_END_TIME   = new Date(2025, 11, 25, 21, 0, 0);  // 25 Dec 2025, 9:00 PM IST
 
 
 /* ================== IMPORTS ================== */
@@ -271,6 +271,7 @@ server.listen(PORT, () => {
   console.log("   Start:", EXAM_START_TIME.toString());
   console.log("   End  :", EXAM_END_TIME.toString());
 });
+
 
 
 
