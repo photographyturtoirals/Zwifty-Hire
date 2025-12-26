@@ -140,7 +140,8 @@ app.post("/log", async (req, res) => {
 });
 
 /* ================== SUBMIT EXAM ================== */
-appapp.post("/submit", examTimeCheck, async (req, res) => {
+app.post("/submit", examTimeCheck, async (req, res) => {
+
   try {
     let { email, answers } = req.body;
     email = email.trim().toLowerCase();
@@ -225,6 +226,7 @@ server.listen(PORT, () => {
   console.log("   Start:", EXAM_START_TIME.toString());
   console.log("   End  :", EXAM_END_TIME.toString());
 });
+
 
 
 
