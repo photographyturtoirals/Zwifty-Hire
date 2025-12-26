@@ -140,10 +140,14 @@ app.post("/log", async (req, res) => {
 });
 
 /* ================== SUBMIT EXAM ================== */
-app.post("/submit", examTimeCheck, async (req, res) => {
+appapp.post("/submit", examTimeCheck, async (req, res) => {
   try {
     let { email, answers } = req.body;
     email = email.trim().toLowerCase();
+
+    if (!Array.isArray(answers) || answers.length === 0) {
+      return res.status(400).json({ error: "No answers received" });
+    }
 
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ error: "User not found" });
@@ -161,6 +165,7 @@ app.post("/submit", examTimeCheck, async (req, res) => {
     res.status(500).json({ error: "Submission failed" });
   }
 });
+
 
 /* ================== ADMIN AUTH ================== */
 const ADMIN_EMAIL = "admin@zwifty.com";
@@ -220,6 +225,7 @@ server.listen(PORT, () => {
   console.log("   Start:", EXAM_START_TIME.toString());
   console.log("   End  :", EXAM_END_TIME.toString());
 });
+
 
 
 
