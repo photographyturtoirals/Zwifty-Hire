@@ -232,16 +232,15 @@ function collectAnswers() {
       finalAnswers.push({
         questionNumber: i + 1,
         question: q.q,
-        selectedOption: q.o[answers[i]]
+        selectedOptionIndex: answers[i] + 1, // option number (1–4)
+        selectedOptionText: q.o[answers[i]]
       });
     }
   });
 
-  // ✅ SAVE FINAL ANSWERS FOR PROCTOR
-  localStorage.setItem("finalAnswers", JSON.stringify(finalAnswers));
-
   return finalAnswers;
 }
+
 
 
 
@@ -260,6 +259,7 @@ loadQuestion();updatePalette();
 
 </body>
 </html>
+
 
 
 
