@@ -260,19 +260,23 @@ function submitExam() {
 
 
 //collect answers
-// ❌ REMOVE THIS COMPLETELY
-const savedAnswers = JSON.parse(
-  localStorage.getItem("finalAnswers") || "[]"
-);
+function collectAnswers() {
+  const finalAnswers = [];
 
-fetch("/submit", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    email: candidateEmail,
-    answers: savedAnswers
-  })
-})
+  questions.forEach((q, i) => {
+    if (answers[i] !== undefined) {
+      finalAnswers.push({
+        questionNumber: i + 1,
+        question: q.q,
+        selectedOptionIndex: answers[i] + 1, // OPTION NUMBER
+        selectedOptionText: q.o[answers[i]]
+      });
+    }
+  });
+
+  return finalAnswers;
+}
+
 
 
 
@@ -288,6 +292,7 @@ async function beginExam() {
   await startVoiceDetection();
   startExamTimer(50);
 }
+
 
 
 
