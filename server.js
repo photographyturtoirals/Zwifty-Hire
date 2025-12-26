@@ -61,8 +61,17 @@ const UserSchema = new mongoose.Schema({
 });
 
 const ResultSchema = new mongoose.Schema({
-  email: String,
-  answers: Array,
+  email: { type: String, required: true },
+
+  answers: [
+    {
+      questionNumber: Number,
+      question: String,
+      selectedOptionIndex: Number,
+      selectedOptionText: String
+    }
+  ],
+
   submittedAt: { type: Date, default: Date.now }
 });
 
@@ -226,6 +235,7 @@ server.listen(PORT, () => {
   console.log("   Start:", EXAM_START_TIME.toString());
   console.log("   End  :", EXAM_END_TIME.toString());
 });
+
 
 
 
